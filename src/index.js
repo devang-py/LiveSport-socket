@@ -1,4 +1,5 @@
 import express from 'express';
+import { matchRoute } from './routes/matches.js';
 
 const app = express();
 const PORT = 8000;
@@ -10,6 +11,9 @@ app.use(express.json());
 app.get('/', (req, res) => {
   res.send('LiveSports server is running!');
 });
+
+// Matches route starts with /matches/...
+app.use('/matches', matchRoute);
 
 // Start the server and log the URL
 app.listen(PORT, () => {
