@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express from 'express';
 import { matchRoute } from './routes/matches.js';
 import http from 'http';
@@ -5,7 +6,7 @@ import { attachWebSocketServer } from './ws/server.js';
 import { securityMiddleware } from './ws/arcjet.js';
 
 const PORT = Number(process.env.PORT || 8000);
-const HOST = process.env.Host || '0.0.0.0';
+const HOST = process.env.HOST || process.env.Host || '0.0.0.0';
 
 const app = express();
 const server = http.createServer(app);
@@ -20,6 +21,7 @@ app.get('/', (req, res) => {
 
 //ACRJETS SECURITY LAYER - CALLED BEFORE PASSING THROUGH ANY FEATURE 
 app.use(securityMiddleware());
+//protecting all the matches route after here 
 
 // Matches route starts with /matches/...
 app.use('/matches', matchRoute);

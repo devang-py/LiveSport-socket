@@ -1,56 +1,57 @@
-import arcjet, { slidingWindow } from "@arcjet/node";
+import 'dotenv/config';
+import arcjet, { detectBot, shield, slidingWindow } from "@arcjet/node";
 
-const arcjetKey = process.env.ARCJET_COLLECTOR_KEY;
-const arcjetMode= process.env.ARCJET_MODE === 'DRY_RUN' ? 'DRY_RUN' : 'LIVE'
+const arcjetKey = process.env.ARCJET_KEY || process.env.ARCJET_COLLECTOR_KEY;
+const arcjetMode = process.env.ARCJET_MODE === 'DRY_RUN' ? 'DRY_RUN' : 'LIVE';
 
-if(!arcjetKey){
+if (!arcjetKey) {
     throw new Error('arcjet variable is missing for key');
 }
 
-//for out http protection
-export const httpArcjet= arcjetKey ?
+// for our http protection
+export const httpArcjet = arcjetKey ?
     arcjet({
         key: arcjetKey,
         rules: [
-            shield({mode: arcjetMode}),
-            detectBot({mode: arcjetMode, allow:['CATAGRY: SEARCH_ENGINE', 'CATAGORY: PREVIEW']}),
-            slidingWindow({MODE: arcjetMode, interval:'10s' , max: 50})
+            shield({ mode: arcjetMode }),
+            detectBot({ mode: arcjetMode, allow: ['CATEGORY:SEARCH_ENGINE', 'CATEGORY:PREVIEW'] }),
+            slidingWindow({ mode: arcjetMode, interval: '10s', max: 50 })
         ],
-    }): null ;
+    }) : null;
 
-//for our websockte prootecition
-export const wsArcjet= arcjetKey ?
+// for our websocket protection
+export const wsArcjet = arcjetKey ?
     arcjet({
-        kkey: arcjetKey,
+        key: arcjetKey,
         rules: [
-            shield({mode: arcjetMode}),
-            detectBot({mode: arcjetMode, allow:['CATAGRY: SEARCH_ENGINE', 'CATAGORY: PREVIEW']}),
-            slidingWindow({MODE: arcjetMode, interval:'2s' , max: 5})
+            shield({ mode: arcjetMode }),
+            detectBot({ mode: arcjetMode, allow: ['CATEGORY:SEARCH_ENGINE', 'CATEGORY:PREVIEW'] }),
+            slidingWindow({ mode: arcjetMode, interval: '2s', max: 5 })
         ],
-    }): null ;
+    }) : null;
  
-export function securityMiddleware(){
-    return async (req, res, next ) => {
-        if(!httpArcjet) return next();
+export function securityMiddleware() {
+    return async (req, res, next) => {
+        if (!httpArcjet) return next();
 
-        try{
-            //it analyze the req locally where possible and otherwise
-            //calls arcjet decision 
+        try {
+            // it analyzes the req locally where possible and otherwise
+            // calls arcjet decision 
             const decision = await httpArcjet.protect(req);
 
-            if(decision.isDenied()){
-                if(decision.reason.isRateLimit()){
-                    return res.status(429). json({error: 'Too many requests you are temperorily blocked'});
+            if (decision.isDenied()) {
+                if (decision.reason.isRateLimit()) {
+                    return res.status(429).json({ error: 'Too many requests, you are temporarily blocked' });
                 }
 
-                return res.status(503).jjson({error: 'Forbidden reques'});
+                return res.status(403).json({ error: 'Forbidden request' });
             }
 
-        }catch (e) {
-            console.error('Arcjet middleware error' , e);
-            return res.status(503).json({error: 'Servics unavailable'});
+        } catch (e) {
+            console.error('Arcjet middleware error', e);
+            return res.status(503).json({ error: 'Service unavailable' });
         }
 
-        next
-    }
+        next();
+    };
 }
