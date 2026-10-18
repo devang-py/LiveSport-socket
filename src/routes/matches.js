@@ -13,7 +13,7 @@ matchRoute.get('/', async (req, res) => {
     const MAX_LIMIT = 60;
     //---check success form parsed which we get in json from query
     if (!parsed.success) {
-        return res.status(400).json({ error: 'Invalid Payload', details: parsed.error });
+        return res.status(400).json({ error: 'Invalid Payload', details: parsed.error.issues });
     }
     //---limit for matches
     const LIMIT = Math.min(parsed.data.limit ?? 50, MAX_LIMIT);
@@ -37,7 +37,7 @@ matchRoute.post('/', async (req, res) => {
 
     // if parsing fails
     if (!parsed.success) {
-        return res.status(400).json({ error: 'Invalid Payload', details: parsed.error.errors });
+        return res.status(400).json({ error: 'Invalid Payload', details: parsed.error.issues });
     }
 
     const { startTime, endTime, homeScore, awayScore } = parsed.data;
@@ -54,6 +54,10 @@ matchRoute.post('/', async (req, res) => {
 
         res.status(201).json({ data: event });
 
+        if(res.app.locals.broadcastMatchCreated){
+            console.log(res.app.locals.broadcastMatchCreated);
+            res.app.locals.broadcastMatchCreated(event);
+        }
     } catch (e) {
         res.status(500).json({ error: 'Internal Server Error' });
     }
