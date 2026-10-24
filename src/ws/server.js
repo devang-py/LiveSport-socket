@@ -4,10 +4,12 @@ import {wsArcjet} from "./arcjet.js";
 const matchSubscribers = new Map();
 
 function subscribe(matchId, socket) {
+    // if matchId is not in matchSubscribers, initialize it with a new Set
     if(!matchSubscribers.has(matchId)) {
         matchSubscribers.set(matchId, new Set());
     }
 
+    // add socket to the Set of subscribers for this matchId
     matchSubscribers.get(matchId).add(socket);
 }
 
